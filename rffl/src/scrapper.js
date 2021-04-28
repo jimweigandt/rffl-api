@@ -54,18 +54,13 @@ const { convertArrayToCSV } = require('convert-array-to-csv');
             return weekData[0];
         });
 
-        //let weekNumber = getWeek.substr(0, getWeek.indexOf(":"));
+        // Extract week and dates from string
         let week = getWeek.split(': ')[0]; 
         let wholeDate = getWeek.split(': ')[1];
         let weekNumber = week.split(' ')[1];
         let startDate = wholeDate.split(' - ')[0];
         let endDate = wholeDate.split(' - ')[1];
 
-//         console.log(week);
-//         console.log(wholeDate);
-//         console.log(weekNumber)
-// ;       console.log(startDate);
-//         console.log(endDate);
 
         const getTeamNames = await page.evaluate(() => {
             const result = document.querySelector("#matchup-header").innerText;
@@ -77,52 +72,68 @@ const { convertArrayToCSV } = require('convert-array-to-csv');
         const getPlayerInformation = await page.evaluate((i) => {
             
             // Selectors
-            //const playerName = '[href^="https://sports.yahoo.com/nfl/players/"][class^="Nowrap"]'
-            const defenseName = '[href^="https://sports.yahoo.com/nfl/teams/"][class^="Nowrap"]'
-            const defenseId = '[class^="playernote Ta-start yfa-icon Z-1 yfa-rapid-beacon yfa-rapid-module-playernotes"]'
-            const projectedPoints = '[class^="Alt Ta-end F-shade"]'
-            const totalPoints = '[class^="pps Fw-b has-stat-note"]'
+            const id = '[class^="playernote Ta-start yfa-icon Z-1 yfa-rapid-beacon yfa-rapid-module-playernotes"]'
+            const playerName = '[href^="https://sports.yahoo.com/nfl/"][class^="Nowrap"]'
+            const emptySlot = '[class^="ysf-player-name Nowrap Grid-u Relative"]'
+            const projectedPoints = '[class^="Alt Ta-end F-shade Va-top"]'
+            const points = '[title^="Show Points Per Stat Breakdown"][class^="pps Fw-b has-stat-note"]'
+            const dash = '[class^="Ta-end Fw-b Nowrap Va-top"],[class^="Pend-lg Ta-end Fw-b Nowrap Va-top"]'
+            const last = '[class^="Alt Ta-end Fw-b Nowrap Va-top"]'
             const position = '[class^="Va-top Bg-shade F-shade Ta-c"]'
-            const emptySlot = '[class^="ysf-player-name Nowrap Grid-u Relative Lh-xs Ta-start"]'
-            const dash = '[class^="Pend-lg Ta-end Fw-b Nowrap Va-top"]'
+            const ir = '[class^="Alt Va-top Bg-shade F-shade Ta-c"]'
+
 
             const result = document.querySelectorAll(
-                `${defenseId},${emptySlot},${position},${projectedPoints}`
-                // `[href^="https://sports.yahoo.com/nfl/players/"][class^="Nowrap"],[class^="Alt Ta-end F-shade"],[class^="pps Fw-b has-stat-note"],[class^="Va-top Bg-shade F-shade Ta-c"]`
+                `${id},${playerName},${emptySlot},${projectedPoints},${points},${dash},${last},${position},${ir}`
             );
-            // const startingData = result.split("\n");
             
             const array = [];
 
             for (i = 0; i < result.length; i++) {
-                
-                if (result[i].getAttribute("title") !== 'No new player Notes') {
-                    array.push(result[i].innerText);
+
+                if (result[i].getAttribute("data-ys-playerid") !== null) {
+                    array.push(result[i].getAttribute("data-ys-playerid"));
                 }
-                
-                if (result[i].getAttribute("id") != null) {
-                    array.push(result[i].getAttribute("id"));
+
+                if (result[i].getAttribute("class") === 'Nowrap') {
+                    array.push(result[i].innerText);
                 }
 
                 if (result[i].innerText === "(Empty)") {
+                    array.push("00000");
                     array.push("(Empty)");
                 }
 
+                if (result[i].getAttribute("class") === 'Alt Ta-end F-shade Va-top' && result[i].innerText !== "Proj") {
+                    array.push(result[i].innerText)
+                }
 
+                if (result[i].getAttribute("title") === "Show Points Per Stat Breakdown") {
+                    array.push(result[i].innerText)
+                }
+
+                if (result[i].innerText === "–") {
+                    array.push(result[i].innerText)
+                }
+
+                if (result[i].getAttribute("class") === 'Alt Ta-end Fw-b Nowrap Va-top') {
+                    array.push(result[i].innerText)
+                }
+
+                if (result[i].getAttribute("class") === 'Va-top Bg-shade F-shade Ta-c' && result[i].innerText !== 'TOTAL') {
+                    array.push(result[i].innerText)
+                } 
+
+                if(result[i].innerText === 'IR') {
+                    array.push(result[i].innerText)
+                }
 
             };
-
-            array.forEach(function(item, index, object) {
-                if ( item === 'No new player Notes' || item === 'Player Note') {
-                    object.splice(index, 1);
-                }
-            });
 
             return array;
         })
 
-        console.log(getPlayerInformation);
-
+        getPlayerInformation.forEach((element, index) => console.log(`${index} - ${element}`))
 
         const finalPlayerData = [];
 
@@ -307,7 +318,6 @@ const { convertArrayToCSV } = require('convert-array-to-csv');
         await browser.close();
 
         // const csvPlayerData = convertArrayToCSV(getPlayerInformation, {
-        //     separator: ';'
         // });
 
         // fs.appendFile('test.csv', csvPlayerData, (err) => {
