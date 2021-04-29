@@ -139,7 +139,11 @@ const currentYear = '2012';
 
                 if (result[i].getAttribute("class") === 'Va-top Bg-shade F-shade Ta-c' && result[i].innerText !== 'TOTAL') {
                     array.push(result[i].innerText)
-                } 
+                }
+                
+                if (result[i].getAttribute("class") === 'Alt Va-top Bg-shade F-shade Ta-c' && result[i].innerText === 'BN') {
+                    array.push(result[i].innerText)
+                }
 
                 if(result[i].innerText === 'IR') {
                     array.push(result[i].innerText)
@@ -586,7 +590,7 @@ const currentYear = '2012';
                 // Team 2 / Player 11 / Bench Lineup
                 {
                     playerId: getPlayerInformation[99],
-                    playerName: getPlayerInformation[101],
+                    playerName: getPlayerInformation[100],
                     position: getPlayerInformation[96],
                     projection: getPlayerInformation[98],
                     points: getPlayerInformation[97],
@@ -675,8 +679,10 @@ const currentYear = '2012';
                 }
             )
         };
-
+        
         pushPlayerData();
+
+        //console.log(finalPlayerData)
     
         await browser.close();
 
